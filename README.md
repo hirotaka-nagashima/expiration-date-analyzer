@@ -1,5 +1,5 @@
 # Expiration Date Analyzer
-Estimates expiration date using word co-occurrence.
+Estimates expiration date of documents using word co-occurrence.
 
 ## Why I was born
 Have you seen an expired tweet on Twitter? Expiration date can be used to filter such documents.

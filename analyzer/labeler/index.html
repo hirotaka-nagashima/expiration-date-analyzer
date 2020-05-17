@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Labeler</title>
+    <style>
+        * {
+            margin: 0;
+        }
+        body {
+            color: rgb(255, 255, 255);
+            background: rgb(21, 32, 43);
+            box-sizing: border-box;
+            height: 100vh;
+            padding: 0 10vw;
+            font-size: 5vmin;
+            cursor: help;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        ::selection {
+            color: inherit;
+            background: inherit;
+        }
+        #progress {
+            background: rgb(27, 149, 224);
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 1s;
+            height: 0.5vh;
+        }
+        #created-at {
+            color: rgb(136, 153, 166);
+            line-height: 2em;
+        }
+        time {
+            color: rgb(27, 149, 224);
+            text-decoration: underline;
+            cursor: pointer;
+            margin: 0.1em;
+        }
+        time:focus {
+            color: rgb(224, 149, 27);
+        }
+    </style>
+    <script src="/eel.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+        $(function() {
+            eel.askPythonProceed();  // Load a first tweet.
+            $('body').on('click', function() {
+                eel.askPythonLabel(null);
+                eel.askPythonProceed();
+            }).on('mousewheel', function(event) {
+                let focusable = $('#tweet time');
+                let diff = 0 < event.originalEvent.wheelDelta ? -1 : +1;
+                let focusedIndex = Math.max(0, Math.min(focusable.length - 1,
+                    focusable.index($(':focus')) + diff));
+                let focused = focusable.eq(focusedIndex);
+                focused.focus();
+            }).on('mousedown', function(event) {
+                if (event.which === 2) {  // Middle click.
+                    let focused = $(':focus');
+                    if (focused.length === 0)  // Nothing is focused.
+                        focused = $('body');
+                    focused.trigger('click');
+                }
+            });
+        });
+        eel.expose(proceed, 'ask_js_proceed');
+        function proceed(progress, createdAt, htmlTweet) {
+            $('#progress').css('width', (progress * 100) + 'vw');
+            $('#created-at').text(createdAt);
+            $('#tweet').html(htmlTweet);
+            $('#tweet time').each(function(index, element) {
+                $(element).on('click', function(event) {
+                    let expirationDatetime = $(element).attr('datetime');
+                    eel.askPythonLabel(expirationDatetime);
+                    eel.askPythonProceed();
+                    event.stopPropagation();  // Avoid skipping a next tweet.
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+<div id="progress"></div>
+<main>
+    <span id="created-at"></span>
+    <p id="tweet"></p>
+</main>
+</body>
+</html>

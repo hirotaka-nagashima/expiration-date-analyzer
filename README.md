@@ -22,3 +22,6 @@ Also, I can estimate expiration date of some documents using word co-occurrence.
 
 ### 4. To assist users to label tweets expiration date
 This is critical to evaluate the models.
+
+## Reference
+Hirotaka Nagashima and Keishi Tajima. 2024. Automatic Construction of Expiration Time Expression Dataset from Retweets. In Companion Proceedings of the ACM Web Conference 2024 (WWW '24). Association for Computing Machinery, New York, NY, USA, 545–548. https://doi.org/10.1145/3589335.3651471

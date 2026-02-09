@@ -1,14 +1,12 @@
 from typing import Optional
 
-import tweepy
-
 ID = int
 
 
 class Tweet:
     """Wrapper of an official tweet object."""
 
-    def __init__(self, raw_tweet: tweepy.Status, shown_at):
+    def __init__(self, raw_tweet, shown_at):
         self.created_at = getattr(raw_tweet, "created_at")
         self.id = getattr(raw_tweet, "id")  # type: ID
 

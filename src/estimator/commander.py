@@ -1,11 +1,9 @@
 """Manages data flow to evaluate classifiers."""
 
 import os
-from typing import Dict
 from typing import List
 from typing import Tuple
 
-import numpy as np
 from sklearn import model_selection
 from sklearn import naive_bayes
 
@@ -27,15 +25,22 @@ def do(data_root_dir):
     for dir_ in dirs:
         labeler.AutoLabeler.run(dir_)
 
-    dataset = _load_dataset(dirs)
-    all_y_pred = {}
-    for additional_extension in ["bsig0.2ry0w101o0", "bsig0.9ry1w101o0"]:
-        y_pred = _load_y_pred(dirs, additional_extension)
-        all_y_pred[additional_extension] = y_pred
-    _cross_validate_foreach(dataset, all_y_pred)
+    dataset = _load_dataset(dirs, additional_extension="bsig0.9ry1w101o0")
+    x, _, y_pred, _, y_true, _ = \
+        model_selection.train_test_split(
+            *dataset, test_size=0.2, random_state=0)
+
+    _cross_validate((x, y_pred, y_true))
 
 
-def _load_dataset(dirs) -> _Dataset:
+def _load_dataset(dirs, additional_extension=None) -> _Dataset:
+    """
+    Args:
+        dirs: Directories to load dataset.
+        additional_extension: You can specify a version for a file created by
+            AutoLabeler. For example, "time_estimated.json.bsig0" has an
+            additional extension, "bsig0".
+    """
     x = []  # type: List[sklearn.X]
     y_pred = []  # type: List[sklearn.Y]
     y_true = []  # type: List[sklearn.Y]
@@ -46,7 +51,8 @@ def _load_dataset(dirs) -> _Dataset:
         filter_ = filters.by_time_dependency(all_time_expressions)
         io = fileio.CSVHandler(dir_)
         tweets_df = io.read_tweets(index_col="id", filter_=filter_)
-        time_estimated = labeler.AutoLabeler.load_labels(dir_)
+        time_estimated = labeler.AutoLabeler.load_labels(
+            dir_, additional_extension)
         time_labeled = labeler.HandLabeler.load_labels(dir_)
 
         # Register data.
@@ -67,59 +73,13 @@ def _load_dataset(dirs) -> _Dataset:
     return x, y_pred, y_true
 
 
-def _load_y_pred(dirs, additional_extension) -> List[sklearn.Y]:
-    y_pred = []  # type: List[sklearn.Y]
-    registered_ids = set()
-    for dir_ in dirs:
-        time_estimated = labeler.AutoLabeler.load_labels(
-            dir_, additional_extension)
-        for id_, y_pred_ in time_estimated.items():
-            if id_ in registered_ids:
-                continue
-            y_pred.append(y_pred_)
-            registered_ids.add(id_)
-    return y_pred
-
-
 def _cross_validate(dataset: _Dataset):
     x, y_pred, y_true = dataset
-    text_divider = sklearn.TextDivider(top_k=243, pos_include={"その他", "フィラー", "感動詞", "記号", "形容詞", "助動詞", "接続詞", "接頭詞", "動詞", "副詞", "名詞", "連体詞"})
-    sw = sklearn.Wrapper(naive_bayes.MultinomialNB(), text_divider)
-    sw.cross_validate(x, y_pred, y_true=y_true)
-
-
-def _cross_validate_foreach(dataset: _Dataset,
-                            all_y_pred: Dict[str, List[sklearn.Y]]):
-    x, _, y_true = dataset
-    text_divider = sklearn.TextDivider(top_k=243, pos_include={"その他", "フィラー", "感動詞", "記号", "形容詞", "助動詞", "接続詞", "接頭詞", "動詞", "副詞", "名詞", "連体詞"})
+    text_divider = sklearn.TextDivider(
+        top_k=729,
+        pos_include={"その他", "フィラー", "感動詞", "記号",
+                     "形容詞", "助詞", "助動詞", "接続詞", "接頭詞",
+                     # "動詞",
+                     "副詞", "名詞", "連体詞"})
     sw = sklearn.Wrapper(naive_bayes.BernoulliNB(), text_divider)
-    for name, y_pred in all_y_pred.items():
-        print(name, end="\t")
-        sw.cross_validate(x, y_pred, y_true=y_true)
-
-
-def _grid_search(dataset: _Dataset):
-    x, y_pred, y_true = dataset
-    x_train, x_test, y_pred_train, _, y_true_train, y_true_test = (
-        model_selection.train_test_split(
-            x, y_pred, y_true, random_state=0))
-
-    text_divider = sklearn.TextDivider(top_k=243, pos_include={"その他", "フィラー", "感動詞", "記号", "形容詞", "助動詞", "接続詞", "接頭詞", "動詞", "副詞", "名詞", "連体詞"})
-
-    # Finding parameters.
-    best_mean = -np.inf
-    best_param = None
-    for param in [0.01, 0.05, 0.1, 0.5, 1.0]:
-        print(param)
-        sw = sklearn.Wrapper(naive_bayes.MultinomialNB(alpha=param),
-                             text_divider=text_divider)
-        mean = sw.cross_validate(x_train, y_pred_train, y_true=y_true_train)
-        if best_mean < mean:
-            best_param = param
-            best_mean = mean
-
-    # Final evaluation.
-    print(best_param)
-    sw = sklearn.Wrapper(naive_bayes.MultinomialNB(alpha=best_param),
-                         text_divider=text_divider)
-    sw.evaluate(x_train, x_test, y_pred_train, y_true_test)
+    sw.cross_validate(x, y_pred, y_true=y_true)

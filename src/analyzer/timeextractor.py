@@ -12,12 +12,13 @@ from logger import fileio
 from utils import jsonhandler
 from utils import timenormalizer
 
-AllTimeExpressions = Dict[str, timenormalizer.TimeExpressions]
+_TweetID = str
+AllTimeExpressions = Dict[_TweetID, timenormalizer.TimeExpressions]
 
 FILENAME = "time.json"
 
 
-def extract_time_expressions(data_dir) -> None:
+def extract_time_expressions(data_dir, lang="ja") -> None:
     """Extracts time expressions from tweets and saves them."""
     path = _get_path(data_dir)
     data = jsonhandler.load(path)
@@ -29,7 +30,8 @@ def extract_time_expressions(data_dir) -> None:
         sentence = info["full_text"]
         doc_time = info["created_at"] + dt.timedelta(hours=9)  # utc to jst
         try:
-            time_expressions = timenormalizer.extract_time(sentence, doc_time)
+            tool = timenormalizer.ja if lang == "ja" else timenormalizer.en
+            time_expressions = tool.extract_time(sentence, doc_time)
         except requests.HTTPError as e:
             print(f"{id_}: {e}")
             break
@@ -49,6 +51,7 @@ def load_time_expressions(data_dir) -> AllTimeExpressions:
                 since = parser.isoparse(since)
                 until = None if until is None else parser.isoparse(until)
                 return keyword, (since, until)
+
             raw_time_expressions[index] = to_time_expression(
                 keyword=raw_time_expression[0],
                 since=raw_time_expression[1][0],

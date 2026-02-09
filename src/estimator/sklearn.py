@@ -1,3 +1,4 @@
+import math
 import re
 from typing import Dict
 from typing import Iterable
@@ -7,7 +8,6 @@ from typing import Tuple
 
 import MeCab
 import numpy as np
-from sklearn import metrics
 from sklearn import model_selection
 from sklearn import pipeline
 from sklearn.feature_extraction import text
@@ -21,7 +21,7 @@ Y = labeler.Label
 _X = text.CountVectorizer
 _Y = bool
 
-_Result = Tuple[Iterable[_Y], Iterable[_Y]]
+Result = Tuple[Iterable[Y], Iterable[Y]]
 
 
 class Wrapper:
@@ -34,93 +34,94 @@ class Wrapper:
         ])
 
     def cross_validate(self, x: List[X], y: List[Y],
-                       y_true: Optional[List[Y]] = None,
-                       shows_only_counts=False) -> float:
+                       y_true: Optional[List[Y]] = None, size_train=None):
         """
         Args:
             x: X.
             y: Y. If y_true is given, used only for training.
             y_true: Y used only for testing.
-            shows_only_counts: Shows only counts in a confusion matrix. The
-                order is TP, FP, FN, TN.
-
-        Returns:
-            Mean Matthews correlation coefficient.
+            size_train: You can specify a size of training data. None uses
+                an 80% of all data as training data.
         """
         if y_true is None:
             y_true = y
 
-        def to_bool(a): return [False if o is None else True for o in a]
-        y, y_true = to_bool(y), to_bool(y_true)
+        def to_bool(a):
+            return [False if o is None else True for o in a]
+
+        y = to_bool(y)
         x, y, y_true = np.array(x), np.array(y), np.array(y_true)
 
         # Cross-validate manually because of distinction between y to train and
         # y to test: y_train is obtained from AutoLabeler but y_test is obtained
         # from HandLabeler.
-        results = []  # type: List[_Result]
+        results = []  # type: List[Result]
         kf = model_selection.KFold(shuffle=True, random_state=0)
         kf.get_n_splits(x)
         for train_index, test_index in kf.split(x):
+            if size_train is not None:
+                test_index = np.concatenate(
+                    [test_index, train_index[size_train:]])
+                train_index = train_index[:size_train]
             x_train, x_test = x[train_index], x[test_index]
             y_train, y_test = y[train_index], y_true[test_index]
             self._clf.fit(x_train, y_train)
             y_pred = self._clf.predict(x_test)
+            y_pred = np.array(Wrapper._restore_datetime(x_test, y_pred))
             results.append((y_test, y_pred))
 
-        final_result = Wrapper._concat_results(results)
-        if shows_only_counts:
-            Wrapper._show_counts(final_result)
-        else:
-            Wrapper._show_results(results, final_result=final_result)
-
-        mcc = metrics.matthews_corrcoef(*final_result)
-        return mcc
-
-    def evaluate(self, x_train: List[X], x_test: List[X],
-                 y_train: List[Y], y_test: List[Y]):
-        def to_bool(a): return [False if o is None else True for o in a]
-        y_train, y_test = to_bool(y_train), to_bool(y_test)
-        self._clf.fit(x_train, y_train)
-        y_pred = self._clf.predict(x_test)
-        result = (y_test, y_pred)
-        Wrapper._show_result(result)
+        Wrapper._show_result(results)
 
     @staticmethod
-    def _concat_results(results: List[_Result]) -> _Result:
-        all_y_true, all_y_pred = [], []
-        for y_true, y_pred in results:
-            all_y_true.extend(y_true)
-            all_y_pred.extend(y_pred)
-        return all_y_true, all_y_pred
+    def _restore_datetime(x, y_bool: List[_Y]) -> List[Y]:
+        y_time = []
+        for (_, time_expressions), y_bool_ in zip(x, y_bool):
+            y_time_ = None
+            if y_bool_:
+                # Restore datetime.
+                for (_, (since, until)) in time_expressions:
+                    if until is None:  # definite time
+                        y_time_ = (since if y_time_ is None
+                                   else max(since, y_time_))
+                if y_time_ is None:  # only dates
+                    for (_, (_, until)) in time_expressions:
+                        y_time_ = (until if y_time_ is None
+                                   else max(until, y_time_))
+            y_time.append(y_time_)
+        return y_time
 
     @staticmethod
-    def _show_result(result: _Result):
-        print("TP", "FP", "FN", "TN", sep="\t")
-        Wrapper._show_counts(result)
-        print(f"MCC: {metrics.matthews_corrcoef(*result)}")
-
-    @staticmethod
-    def _show_results(results: List[_Result],
-                      final_result: Optional[_Result] = None):
-        if final_result is None:
-            final_result = Wrapper._concat_results(results)
-
-        print("TP", "FP", "FN", "TN", sep="\t")
-        Wrapper._show_counts(final_result)
+    def _show_result(results: List[Result]):
+        # Calculate a confusion matrix.
+        ttp, tp, fp, fn, tn = 0, 0, 0, 0, 0
         for result in results:
-            Wrapper._show_counts(result)
-        print(f"MCC: {metrics.matthews_corrcoef(*final_result)}")
+            for y_test, y_pred in zip(result[0], result[1]):
+                if y_test is None and y_pred is None:
+                    tn += 1
+                if y_test is None and y_pred is not None:
+                    fp += 1
+                if y_test is not None and y_pred is None:
+                    fn += 1
+                if y_test is not None and y_pred is not None:
+                    tp += 1
+                    if y_test == y_pred:  # as datetime
+                        ttp += 1
 
-    @staticmethod
-    def _show_counts(result: _Result):
-        tn, fp, fn, tp = metrics.confusion_matrix(*result).ravel()
-        print(tp, fp, fn, tn, sep="\t")
+        try:
+            mcc = (tp * tn - fp * fn) / math.sqrt(
+                (tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        except ZeroDivisionError:
+            mcc = np.NaN
+
+        print("TTP", "TP", "FP", "FN", "TN", sep="\t")
+        print(ttp, tp, fp, fn, tn, sep="\t")
+        print(f"MCC: {mcc}")
 
 
 class TextDivider:
     """Divides a text into meaningful words."""
 
-    _PATH = r"C:\Users\Admin\Cloud\Programs\IntelliJ IDEA\Study\Best By Dates Analyzer\data\words.json"
+    _PATH = r"C:\Users\Admin\Cloud\Study\Kyoto University\Bachelor\Research\Programs\data\words.json"
     _tagger = MeCab.Tagger("-Ochasen")
 
     def __init__(self, parsed_texts_for_tf_table: Optional[List[X]] = None,

@@ -1,6 +1,7 @@
 import datetime as dt
 import inspect
 import os
+import secrets
 import sys
 from typing import Optional
 
@@ -36,7 +37,8 @@ class Reporter:
         """
         now = dt.datetime.now().replace(microsecond=0)
         pid = os.getpid()
-        header = f"{now} (PID: {pid})"
+        token = secrets.token_urlsafe(nbytes=3)  # to avoid the 187 error
+        header = f"{now} (PID: {pid}) [{token}]"
         status = f"{header}\n{content}"
         try:
             if self._parent_id is None:

@@ -286,7 +286,7 @@ class HandLabeler(Labeler):
     def filename():
         return "time_labeled.json"
 
-    _HTML_DIR = r"C:\Users\Admin\Cloud\Programs\IntelliJ IDEA\Study\Best By Dates Analyzer\src\analyzer\labeler"
+    _HTML_DIR = r"C:\Users\Admin\Cloud\Study\Kyoto University\Bachelor\Research\Programs\src\analyzer\labeler"
     _HTML_FILENAME = "index.html"
 
     _index = None  # type: Optional[int]

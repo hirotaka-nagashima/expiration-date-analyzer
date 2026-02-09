@@ -28,6 +28,10 @@ class API:
             "followers_ids":
                 TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
 
+            # GET friends/ids
+            "friends_ids":
+                TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
+
             # GET search/tweets
             "search":
                 TweepyAPISelector(user_auth_limit=180, app_auth_limit=450),
@@ -43,6 +47,14 @@ class API:
             # GET statuses/show/:id
             "get_status":
                 TweepyAPISelector(user_auth_limit=900, app_auth_limit=900),
+
+            # GET statuses/user_timeline
+            "user_timeline":
+                TweepyAPISelector(user_auth_limit=900, app_auth_limit=1500),
+
+            # GET users/lookup
+            "lookup_users":
+                TweepyAPISelector(user_auth_limit=900, app_auth_limit=300),
         }
 
     @property
@@ -66,6 +78,12 @@ class API:
         http://docs.tweepy.org/en/latest/api.html#API.followers_ids
         """
         return self._request("followers_ids", **kwargs)
+
+    def friends_ids(self, **kwargs) -> List[tweet.ID]:
+        """GET friends/ids
+        http://docs.tweepy.org/en/latest/api.html#API.friends_ids
+        """
+        return self._request("friends_ids", **kwargs)
 
     def search(self, **kwargs) -> List[tweet.Tweet]:
         """GET search/tweets
@@ -91,6 +109,18 @@ class API:
         """
         return API._to_tweet(self._request("get_status", **kwargs))
 
+    def user_timeline(self, **kwargs) -> List[tweet.Tweet]:
+        """GET statuses/user_timeline
+        http://docs.tweepy.org/en/latest/api.html#API.user_timeline
+        """
+        return API._to_tweets(self._request("user_timeline", **kwargs))
+
+    def lookup_users(self, **kwargs):
+        """GET users/lookup
+        http://docs.tweepy.org/en/latest/api.html#API.lookup_users
+        """
+        return self._request("lookup_users", **kwargs)
+
     def _request(self, name, **kwargs):
         """
         Raises:
@@ -115,11 +145,11 @@ class API:
             return result
 
     @staticmethod
-    def _to_tweet(raw_tweet: tweepy.Status):
+    def _to_tweet(raw_tweet):
         return tweet.Tweet(raw_tweet, shown_at=dt.datetime.utcnow())
 
     @staticmethod
-    def _to_tweets(raw_tweets: Iterable[tweepy.Status]):
+    def _to_tweets(raw_tweets: Iterable):
         return [API._to_tweet(t) for t in raw_tweets]
 
 

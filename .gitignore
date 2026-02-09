@@ -1,4 +1,8 @@
-credentials/*
-data/*
+.DS_Store
+
+/credentials/*
+/data/*
+/src/main.ipynb
+
 !.gitignore
 !README.md

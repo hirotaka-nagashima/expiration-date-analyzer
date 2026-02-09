@@ -37,7 +37,7 @@ class FileIO(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def read_followers(
+    def read_relationship(
         self, index_col=None, filter_: Optional[Filter] = None
     ) -> Optional[pd.DataFrame]:
         pass
@@ -55,7 +55,11 @@ class FileIO(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def log_followers(self, ids, followed_id):
+    def log_relationship(self, shown_at, ids, to=None, from_=None):
+        pass
+
+    @abc.abstractmethod
+    def write(self, name, df):
         pass
 
 
@@ -90,8 +94,8 @@ class CSVHandler(FileIO):
                  "user_id", "user_screen_name",
                  "user_followers_count", "user_friends_count",
                  "user_verified", "user_statuses_count"],  # for Tweet objects
-            "followers":
-                ["followed_id", "following_id"],
+            "relationship":
+                ["shown_at", "to", "from"],
         }
 
         dtype = {
@@ -118,13 +122,13 @@ class CSVHandler(FileIO):
             "elapsed_time": "uint32",
 
             # others
-            "followed_id": "category",
-            "following_id": "category",
+            "to": "category",
+            "from": "category",
         }
         parse_dates = ["created_at", "shown_at"]
 
         # Categorize them based on the self.HEADER.
-        names = ["tweets", "dynamics", "retweets", "followers"]
+        names = ["tweets", "dynamics", "retweets", "relationship"]
         def filter_dict(dict_, keys): return {k: dict_[k] for k in keys}
         self.DTYPE = {n: filter_dict(dtype, self.HEADER[n]) for n in names}
         self.PARSE_DATES = {n: list(set(parse_dates) & set(self.HEADER[n]))
@@ -145,10 +149,10 @@ class CSVHandler(FileIO):
     ) -> Optional[pd.DataFrame]:
         return self._read("retweets", index_col, filter_)
 
-    def read_followers(
+    def read_relationship(
         self, index_col=None, filter_: Optional[Filter] = None
     ) -> Optional[pd.DataFrame]:
-        return self._read("followers", index_col, filter_)
+        return self._read("relationship", index_col, filter_)
 
     def _read(
         self, name, index_col=None, filter_: Optional[Filter] = None
@@ -202,9 +206,10 @@ class CSVHandler(FileIO):
         rows = CSVHandler._get_rows(tweets, self.HEADER[name])
         self._log(name, rows)
 
-    def log_followers(self, ids, followed_id):
-        name = "followers"
-        rows = [[followed_id, i] for i in ids]
+    def log_relationship(self, shown_at, ids, to=None, from_=None):
+        name = "relationship"
+        rows = ([[shown_at, to, i] for i in ids] if from_ is None
+                else [[shown_at, i, from_] for i in ids])
         self._log(name, rows)
 
     def _log(self, name, rows):
@@ -228,3 +233,12 @@ class CSVHandler(FileIO):
     @staticmethod
     def _get_rows(tweets, mask: Iterable[str]):
         return [CSVHandler._get_row(t, mask) for t in tweets]
+
+    def write(self, name, df):
+        # Split logs into multiple files based on date.
+        date = dt.datetime.today().strftime("%Y%m%d")
+        filename = f"{name}_{date}.csv"
+        dest = os.path.join(self.DATA_DIR, filename)
+
+        os.makedirs(self.DATA_DIR, exist_ok=True)
+        df.to_csv(dest, encoding=self.ENCODING, index=False)

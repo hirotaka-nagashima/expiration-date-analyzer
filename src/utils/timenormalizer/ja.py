@@ -1,21 +1,16 @@
-"""Normalizes time in a sentence."""
+"""Extracts and normalizes time in a Japanese sentence."""
 
 import collections
 import datetime as dt
 import json
-from typing import List
 from typing import Optional
-from typing import Tuple
 
 import requests
 from dateutil import parser
 from dateutil import relativedelta
 
-# NOTE: TimeExpressions should not be defined as Dict[str, Duration] because
-# same words may express different time, which is specification of goo service.
-Duration = Tuple[dt.datetime, Optional[dt.datetime]]
-TimeExpression = Tuple[str, Duration]
-TimeExpressions = List[TimeExpression]
+from utils.timenormalizer import Duration
+from utils.timenormalizer import TimeExpressions
 
 _REQUEST_URL = "https://labs.goo.ne.jp/api/chrono"
 
@@ -50,6 +45,7 @@ def _extract_time(sentence,
         requests.HTTPError: Raised by goo service.
         IndexError: Raised when credentials are not loaded.
     """
+
     def request():
         """
         Raises:
@@ -95,12 +91,14 @@ def _extract_time(sentence,
         duration, returns
             (dt.datetime(2019, 12, 30, 0, 0), None).
         """
+
         def increment(raw_date: str) -> dt.datetime:
             delta = [relativedelta.relativedelta(years=1),
                      relativedelta.relativedelta(months=1),
                      relativedelta.relativedelta(days=1)]
             index = len(raw_date.split("-")) - 1
             return parser.isoparse(raw_date) + delta[index]
+
         min_ = relativedelta.relativedelta(microseconds=1)
 
         raw_datetime = goo_datetime.split("/")
@@ -140,13 +138,6 @@ def extract_time(sentence,
 
     Raises:
         requests.HTTPError: Raised by goo service.
+        IndexError: Raised when credentials are not loaded.
     """
     return _extract_time(sentence, doc_time)
-
-
-def is_time_dependent(sentence):
-    """
-    Raises:
-        requests.HTTPError: Raised by goo service.
-    """
-    return bool(_extract_time(sentence))

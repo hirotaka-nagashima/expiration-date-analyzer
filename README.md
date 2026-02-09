@@ -10,15 +10,15 @@ I can log tweets with their dynamics such as retweeters, the number of retweets.
 
 ### 2. Estimation of expiration date using dynamics
 I can estimate expiration date of tweets from their dynamics **WITHOUT** training, so we can use the estimation as training data for 3.
-<p align="center">
-  <img src="https://latex.codecogs.com/gif.latex?f(doc_i,&space;dynamics_i(t))=\hat{t}_{expiration_i}">
-</p>
+$$
+f(doc_i,dynamics_i(t))=\hat{t}_{expiration_i}
+$$
 
 ### 3. Estimation of expiration date using word co-occurrence
 Also, I can estimate expiration date of some documents using word co-occurrence. Training of a Naive Bayes classifier is required.
-<p align="center">
-  <img src="https://latex.codecogs.com/gif.latex?g(doc_i)=\hat{t}_{expiration_i}">
-</p>
+$$
+g(doc_i)=\hat{t}_{expiration_i}
+$$
 
 ### 4. To assist users to label tweets expiration date
 This is critical to evaluate the models.

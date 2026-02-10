@@ -2,10 +2,7 @@ import abc
 import datetime as dt
 import os
 import re
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Dict, List, Optional, Tuple
 
 import eel
 import numpy as np
@@ -13,12 +10,9 @@ import pandas as pd
 from dateutil import parser
 from scipy import signal
 
-from analyzer import filters
-from analyzer import timeextractor
+from analyzer import filters, timeextractor
 from logger import fileio
-from utils import functions
-from utils import jsonhandler
-from utils import timenormalizer
+from utils import functions, jsonhandler, timenormalizer
 
 _AllTimeExpressions = timeextractor.AllTimeExpressions
 _TimeExpressions = timenormalizer.TimeExpressions
@@ -47,8 +41,7 @@ class Labeler(abc.ABC):
         if additional_extension is not None:
             path += f".{additional_extension}"
         data = jsonhandler.load(path)  # type: _Labels
-        return {k: None if v is None else parser.isoparse(v)
-                for k, v in data.items()}
+        return {k: None if v is None else parser.isoparse(v) for k, v in data.items()}
 
     @staticmethod
     @abc.abstractmethod
@@ -85,8 +78,7 @@ class AutoLabeler(Labeler):
         filter_ = filters.by_time_dependency(all_time_expressions)
         io = fileio.CSVHandler(data_dir)
         tweets_df = io.read_tweets(index_col="id", filter_=filter_)
-        dynamics_df = io.read_dynamics(index_col="elapsed_time",
-                                       filter_=filter_)
+        dynamics_df = io.read_dynamics(index_col="elapsed_time", filter_=filter_)
 
         # Label them.
         labels = {}  # type: Labels
@@ -102,7 +94,8 @@ class AutoLabeler(Labeler):
                 created_at = tweets_df.at[id_, "created_at"].to_pydatetime()
                 x, y, ddy = AutoLabeler._calculate_ddy_for_estimation(df)
                 expiration_datetime = AutoLabeler._estimate_expiration_datetime(
-                    x, y, ddy, time_expressions, created_at)
+                    x, y, ddy, time_expressions, created_at
+                )
 
             labels[id_] = expiration_datetime
 
@@ -115,7 +108,7 @@ class AutoLabeler(Labeler):
         uses_savgol_filter=False,
         smoothing_widths: Tuple[int, int, int] = WIDTHS_MA,
         smoothing_orders: Optional[Tuple[int, int, int]] = None,
-        referred_column: str = REFERRED_COLUMN
+        referred_column: str = REFERRED_COLUMN,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Args:
@@ -128,14 +121,17 @@ class AutoLabeler(Labeler):
                 Savitzky-Golay filter.
             referred_column: Name of a column to be used as y.
         """
+
         def moving_average(x_, order_diff):
             excludes_edges = True if order_diff == 0 else False
             return functions.centered_moving_average(
-                x_, smoothing_widths[order_diff], excludes_edges)
+                x_, smoothing_widths[order_diff], excludes_edges
+            )
 
         def savgol_filter(x_, order_diff):
             return signal.savgol_filter(
-                x_, smoothing_widths[order_diff], smoothing_orders[order_diff])
+                x_, smoothing_widths[order_diff], smoothing_orders[order_diff]
+            )
 
         smooth = savgol_filter if uses_savgol_filter else moving_average
 
@@ -147,7 +143,7 @@ class AutoLabeler(Labeler):
         dx = np.gradient(x)
         dy = np.gradient(y) / dx
         dy = smooth(dy, 1)
-        ddy = np.gradient(dy) / dx ** 2
+        ddy = np.gradient(dy) / dx**2
         ddy = smooth(ddy, 2)
 
         upper_bound = y.argmax() + 1
@@ -166,12 +162,11 @@ class AutoLabeler(Labeler):
         a_sigmoid: float = A_SIGMOID,
         b_sigmoid: float = B_SIGMOID,
         tolerance: float = TOLERANCE,
-        refers_y=False
+        refers_y=False,
     ) -> Label:
         if refers_y:
             b_sigmoid = np.argwhere(y[-1] * b_sigmoid <= y)[0][0] / len(y)
-        evaluation_value = -ddy * functions.sigmoid(
-            a_sigmoid * (x / x[-1] - b_sigmoid))
+        evaluation_value = -ddy * functions.sigmoid(a_sigmoid * (x / x[-1] - b_sigmoid))
         estimated_expiration_elapsed_time = x[evaluation_value.argmax()]
 
         # Approximate the estimated time as near time in time_expressions.
@@ -186,9 +181,7 @@ class AutoLabeler(Labeler):
 
     @staticmethod
     def try_with_various_parameters(
-        data_dir,
-        bounds: List[Tuple[float, float]],
-        division_number: int
+        data_dir, bounds: List[Tuple[float, float]], division_number: int
     ):
         """Calculates confusion matrices for each set of parameters."""
         all_time_expressions = timeextractor.load_time_expressions(data_dir)
@@ -198,8 +191,7 @@ class AutoLabeler(Labeler):
         filter_ = filters.by_time_dependency(all_time_expressions)
         io = fileio.CSVHandler(data_dir)
         tweets_df = io.read_tweets(index_col="id", filter_=filter_)
-        dynamics_df = io.read_dynamics(index_col="elapsed_time",
-                                       filter_=filter_)
+        dynamics_df = io.read_dynamics(index_col="elapsed_time", filter_=filter_)
 
         # Calculate confusion matrices for each set of parameters.
         num_set_params = division_number ** len(bounds)
@@ -211,8 +203,11 @@ class AutoLabeler(Labeler):
                 all_time_expressions[id_],
                 time_labeled[id_],
                 tweets_df.at[id_, "created_at"].to_pydatetime(),
-                bounds, division_number,
-                confusion_matrices, tp_time)
+                bounds,
+                division_number,
+                confusion_matrices,
+                tp_time,
+            )
 
         # Show the result.
         print("TPt\tTP\tFP\tFN\tTN")
@@ -228,7 +223,7 @@ class AutoLabeler(Labeler):
         bounds: List[Tuple[float, float]],
         division_number: int,
         confusion_matrices: List[List[int]],
-        tp_time: List[int]
+        tp_time: List[int],
     ):
         if dynamics_df.empty:
             return
@@ -242,7 +237,7 @@ class AutoLabeler(Labeler):
             p = []
             for j, (lower, upper) in enumerate(bounds):
                 # 0 or 1 or ... or (division_number - 1)
-                i_ = int(i / division_number ** j) % division_number
+                i_ = int(i / division_number**j) % division_number
                 param = lower + (upper - lower) * (i_ / division_number)
                 if j == 2:
                     param = int(param)
@@ -255,16 +250,16 @@ class AutoLabeler(Labeler):
             # Estimate expiration datetime.
             if prev_p2 is None or p[2] != prev_p2:  # for lighter processing
                 x, y, ddy = AutoLabeler._calculate_ddy_for_estimation(
-                    dynamics_df, smoothing_widths=(p[2], p[2], p[2]))
+                    dynamics_df, smoothing_widths=(p[2], p[2], p[2])
+                )
                 prev_p2 = p[2]
             expiration_datetime = AutoLabeler._estimate_expiration_datetime(
-                x, y, ddy, time_expressions, created_at,
-                a_sigmoid=p[0], b_sigmoid=p[1])
+                x, y, ddy, time_expressions, created_at, a_sigmoid=p[0], b_sigmoid=p[1]
+            )
 
             # Update a current confusion matrix.
             # tp: 0, fp: 1, fn: 2, tn: 3
-            index_in_confusion_matrix = (
-                (expiration_datetime is None) * 2 + (time_labeled is None))
+            index_in_confusion_matrix = (expiration_datetime is None) * 2 + (time_labeled is None)
             confusion_matrices[i][index_in_confusion_matrix] += 1
             if index_in_confusion_matrix == 0:  # tp
                 if expiration_datetime == time_labeled:
@@ -306,8 +301,7 @@ class HandLabeler(Labeler):
 
         path = HandLabeler.path(data_dir)
         HandLabeler._index = -1
-        HandLabeler._all_time_expressions = (
-            timeextractor.load_time_expressions(data_dir))
+        HandLabeler._all_time_expressions = timeextractor.load_time_expressions(data_dir)
         HandLabeler._labels = jsonhandler.load(path)
 
         # Load tweets including time expressions.
@@ -354,10 +348,13 @@ class HandLabeler(Labeler):
         time_expressions = HandLabeler._all_time_expressions[id_]
         for keyword, (since, until) in time_expressions:
             datetime = (since if until is None else until).isoformat()
-            start_tag = f"<time datetime=\"{datetime}\" tabindex=\"0\">"
+            start_tag = f'<time datetime="{datetime}" tabindex="0">'
             end_tag = "</time>"
-            html = re.sub(f"((^|{end_tag})[^<]*?){re.escape(keyword)}",
-                          f"\\1{start_tag}{keyword}{end_tag}", html)
+            html = re.sub(
+                f"((^|{end_tag})[^<]*?){re.escape(keyword)}",
+                f"\\1{start_tag}{keyword}{end_tag}",
+                html,
+            )
 
         progress = HandLabeler._index / len(HandLabeler._tweets_df)
         created_at = str(next_tweet["created_at"] + dt.timedelta(hours=9))

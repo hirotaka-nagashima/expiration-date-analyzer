@@ -1,7 +1,5 @@
 import datetime as dt
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 # NOTE: TimeExpressions should not be defined as Dict[str, Duration] because
 # same words may express different time, which is specification of goo service.

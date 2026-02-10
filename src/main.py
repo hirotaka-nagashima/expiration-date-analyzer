@@ -1,5 +1,4 @@
-from logger import fileio
-from logger import logger
+from logger import fileio, logger
 from twitter import authenticator
 
 
@@ -12,6 +11,7 @@ def main():
 
     data_dir = "../data/production/ja"
     from estimator import commander
+
     commander.do(data_dir)
 
 

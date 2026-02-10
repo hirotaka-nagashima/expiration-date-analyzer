@@ -3,19 +3,13 @@ import datetime as dt
 import itertools
 import math
 import time
-from typing import Callable
-from typing import Deque
-from typing import Optional
-from typing import Set
+from typing import Callable, Deque, Optional, Set
 
 import requests
 import tweepy
 
 from logger import fileio
-from twitter import api
-from twitter import error
-from twitter import reporter
-from twitter import tweet
+from twitter import api, error, reporter, tweet
 
 
 class Logger:
@@ -25,9 +19,16 @@ class Logger:
         self._api = api_  # type: api.API
         self._io = io  # type: fileio.FileIO
 
-    def track_dynamics(self, loop_cycle, max_num_ids_to_track,
-                       logs_values=True, logs_retweets=False,
-                       lang="ja", min_retweets=50, additional_q=""):
+    def track_dynamics(
+        self,
+        loop_cycle,
+        max_num_ids_to_track,
+        logs_values=True,
+        logs_retweets=False,
+        lang="ja",
+        min_retweets=50,
+        additional_q="",
+    ):
         """Tracks and logs various values, retweets for tweets searched for.
 
         Args:
@@ -45,7 +46,10 @@ class Logger:
 
         cycles = {}  # times (dimensionless)
         lcm_cycles = 1  # times (dimensionless), to reset a count
-        def lcm(a, b): return (a * b) // math.gcd(a, b)
+
+        def lcm(a, b):
+            return (a * b) // math.gcd(a, b)
+
         for name, total_limit in self._api.total_limit.items():
             cycles[name] = math.ceil(15 * 60 / total_limit / loop_cycle)
             lcm_cycles = lcm(lcm_cycles, cycles[name])
@@ -71,8 +75,9 @@ class Logger:
                 q = f"lang:{lang} min_retweets:{min_retweets} {additional_q}"
                 num_ids_tracked_now = len(ids_to_track_values)
                 max_count_to_log = max_num_ids_to_track - num_ids_tracked_now
-                new_ids = self._search_tweets(q, logged_ids, reporter_,
-                                              max_count_to_log=max_count_to_log)
+                new_ids = self._search_tweets(
+                    q, logged_ids, reporter_, max_count_to_log=max_count_to_log
+                )
 
                 # Update IDs to track.
                 ids_to_track_values.extend(new_ids)
@@ -86,8 +91,11 @@ class Logger:
             if logs_retweets:
                 if count % cycles["retweets"] == 0:
                     id_given_up = self._track_retweets(
-                        ids_to_track_retweets, ids_to_track_retweets_first,
-                        logged_retweets_ids, reporter_)
+                        ids_to_track_retweets,
+                        ids_to_track_retweets_first,
+                        logged_retweets_ids,
+                        reporter_,
+                    )
                     if id_given_up is not None:
                         ids_to_track_values.remove(id_given_up)
 
@@ -110,8 +118,9 @@ class Logger:
                 time.sleep(sleep_duration)
             prev_time = dt.datetime.now()
 
-    def _search_tweets(self, q, logged_ids: Set[tweet.ID], reporter_,
-                       count=100, max_count_to_log=100) -> Set[tweet.ID]:
+    def _search_tweets(
+        self, q, logged_ids: Set[tweet.ID], reporter_, count=100, max_count_to_log=100
+    ) -> Set[tweet.ID]:
         """Searches for tweets and logs new tweets.
 
         Args:
@@ -131,14 +140,15 @@ class Logger:
 
         # Request through the API.
         try:
-            tweets = self._api.search(q=q, result_type="recent", count=count,
-                                      tweet_mode="extended")
+            tweets = self._api.search(q=q, result_type="recent", count=count, tweet_mode="extended")
         except (error.TotalRateLimitError, tweepy.TweepError) as e:
             reporter_.report_error(e)
             return set()
 
         # Log only new tweets.
-        def ids(tweets_): return set([t.id for t in tweets_])
+        def ids(tweets_):
+            return set([t.id for t in tweets_])
+
         got_ids = ids(tweets)
         new_ids = got_ids - logged_ids
         if not new_ids:
@@ -151,8 +161,9 @@ class Logger:
         logged_ids |= new_ids_logged
         return new_ids_logged
 
-    def _track_values(self, ids_to_track: Deque[tweet.ID], reporter_,
-                      num_ids_to_request=100) -> None:
+    def _track_values(
+        self, ids_to_track: Deque[tweet.ID], reporter_, num_ids_to_request=100
+    ) -> None:
         """Gets and logs various values for tweets.
 
         Args:
@@ -166,13 +177,11 @@ class Logger:
 
         # Determine IDs to track now.
         ids_to_track.rotate(num_ids_to_request)
-        ids_to_track_now = list(
-            itertools.islice(ids_to_track, 0, num_ids_to_request))
+        ids_to_track_now = list(itertools.islice(ids_to_track, 0, num_ids_to_request))
 
         # Request through the API.
         try:
-            tweets = self._api.statuses_lookup(id_=ids_to_track_now,
-                                               tweet_mode="extended")
+            tweets = self._api.statuses_lookup(id_=ids_to_track_now, tweet_mode="extended")
         except (error.TotalRateLimitError, tweepy.TweepError) as e:
             reporter_.report_error(e)
             if Logger._is_retryable(e):
@@ -180,12 +189,14 @@ class Logger:
         else:
             self._io.log_dynamics(tweets)
 
-    def _track_retweets(self,
-                        ids_to_track: Deque[tweet.ID],
-                        ids_to_track_first: Set[tweet.ID],
-                        logged_ids: Set[tweet.ID],
-                        reporter_,
-                        count=100) -> Optional[tweet.ID]:
+    def _track_retweets(
+        self,
+        ids_to_track: Deque[tweet.ID],
+        ids_to_track_first: Set[tweet.ID],
+        logged_ids: Set[tweet.ID],
+        reporter_,
+        count=100,
+    ) -> Optional[tweet.ID]:
         """Gets and logs retweets for a specified tweet.
 
         Args:
@@ -222,7 +233,8 @@ class Logger:
             ids_to_track_first.remove(id_to_track_now)
             try:
                 retweet_count = self._api.get_status(
-                    id=id_to_track_now, tweet_mode="extended").retweet_count
+                    id=id_to_track_now, tweet_mode="extended"
+                ).retweet_count
             except (error.TotalRateLimitError, tweepy.TweepError) as e:
                 reporter_.report_error(e, tweet_id=id_to_track_now)
                 if Logger._is_retryable(e):
@@ -238,8 +250,7 @@ class Logger:
 
         # Request through the API.
         try:
-            tweets = self._api.retweets(id=id_to_track_now, count=count,
-                                        tweet_mode="extended")
+            tweets = self._api.retweets(id=id_to_track_now, count=count, tweet_mode="extended")
         except (error.TotalRateLimitError, tweepy.TweepError) as e:
             reporter_.report_error(e, tweet_id=id_to_track_now)
             if Logger._is_retryable(e):
@@ -273,9 +284,7 @@ class Logger:
         ids_to_inquire.appendleft(tweeter)  # Inquire from the tweeter.
 
         # Log followers' IDs of the tweeter/retweeter.
-        self.inquire_followers(
-            ids_to_inquire,
-            first_status=f"Now inquiring viewers of {tweet_id}.")
+        self.inquire_followers(ids_to_inquire, first_status=f"Now inquiring viewers of {tweet_id}.")
 
     def inquire_followers(self, ids, first_status="Now inquiring followers."):
         reporter_ = reporter.Reporter(self._api)
@@ -285,8 +294,7 @@ class Logger:
             cursor = -1
             while cursor != 0:
                 try:
-                    followers, (_, cursor) = self._api.followers_ids(
-                        id=id_, cursor=cursor)
+                    followers, (_, cursor) = self._api.followers_ids(id=id_, cursor=cursor)
                 except error.TotalRateLimitError as e:
                     time.sleep(e.min_break_secs)
                 except tweepy.TweepError as e:
@@ -309,8 +317,7 @@ class Logger:
             cursor = -1
             while cursor != 0:
                 try:
-                    followees, (_, cursor) = self._api.friends_ids(
-                        id=id_, cursor=cursor)
+                    followees, (_, cursor) = self._api.friends_ids(id=id_, cursor=cursor)
                 except error.TotalRateLimitError as e:
                     time.sleep(e.min_break_secs)
                 except tweepy.TweepError as e:
@@ -326,16 +333,12 @@ class Logger:
         reporter_.report_finish()
 
     def inquire_friends_from(
-        self,
-        id_,
-        max_distance,
-        filter_: Optional[Callable[[tweepy.User], bool]] = None
+        self, id_, max_distance, filter_: Optional[Callable[[tweepy.User], bool]] = None
     ):
         id_ = str(id_)
         friends = self._inquire_friends_from(id_, max_distance, filter_)
         df = self._io.read_relationship()
-        df = df[df["to"].isin(friends | {id_}) &
-                df["from"].isin(friends | {id_})]
+        df = df[df["to"].isin(friends | {id_}) & df["from"].isin(friends | {id_})]
         self._io.write("relationship-filtered", df)
 
     def _inquire_friends_from(
@@ -343,7 +346,7 @@ class Logger:
         id_: str,
         max_distance,
         filter_: Optional[Callable[[tweepy.User], bool]] = None,
-        excluded_ids: Optional[Set[str]] = None
+        excluded_ids: Optional[Set[str]] = None,
     ) -> Set[str]:
         """Logs all friends and returns ids of filtered friends."""
         if excluded_ids is None:
@@ -362,10 +365,9 @@ class Logger:
             # Filter the friends.
             valid_friends = set()
             for i in range(0, len(friends), 100):
-                temp_ids = friends[i:(i+100)]
+                temp_ids = friends[i : (i + 100)]
                 details = self._api.lookup_users(user_ids=temp_ids)
-                valid_friends |= {str(user.id) for user in details
-                                  if filter_(user)}
+                valid_friends |= {str(user.id) for user in details if filter_(user)}
             return valid_friends
 
         if max_distance <= 0 or id_ in excluded_ids:
@@ -377,7 +379,8 @@ class Logger:
         all_friends = friends
         for friend in list(friends):
             friends_of_friend = self._inquire_friends_from(
-                friend, max_distance - 1, filter_, excluded_ids)
+                friend, max_distance - 1, filter_, excluded_ids
+            )
             all_friends |= friends_of_friend
         return all_friends
 

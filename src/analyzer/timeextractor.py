@@ -2,15 +2,13 @@
 
 import datetime as dt
 import os
-from typing import Dict
-from typing import Optional
+from typing import Dict, Optional
 
 import requests
 from dateutil import parser
 
 from logger import fileio
-from utils import jsonhandler
-from utils import timenormalizer
+from utils import jsonhandler, timenormalizer
 
 _TweetID = str
 AllTimeExpressions = Dict[_TweetID, timenormalizer.TimeExpressions]
@@ -44,6 +42,7 @@ def load_time_expressions(data_dir) -> AllTimeExpressions:
     data = jsonhandler.load(path)
     for raw_time_expressions in data.values():
         for index, raw_time_expression in enumerate(raw_time_expressions):
+
             def to_time_expression(
                 keyword: str, since: str, until: Optional[str]
             ) -> timenormalizer.TimeExpression:
@@ -55,7 +54,8 @@ def load_time_expressions(data_dir) -> AllTimeExpressions:
             raw_time_expressions[index] = to_time_expression(
                 keyword=raw_time_expression[0],
                 since=raw_time_expression[1][0],
-                until=raw_time_expression[1][1])
+                until=raw_time_expression[1][1],
+            )
     return data
 
 

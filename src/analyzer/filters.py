@@ -16,4 +16,5 @@ def by_time_dependency(all_time_expressions: _AllTimeExpressions) -> _Filter:
         cname = "retweeted_id" if "retweeted_id" in df.columns else "id"
         query = f"{cname} in {time_dependent_ids}"
         df.query(query, inplace=True)
+
     return func

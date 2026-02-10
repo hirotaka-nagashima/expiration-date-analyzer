@@ -1,21 +1,15 @@
 import math
 import os
 import re
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import MeCab
 import numpy as np
-from sklearn import model_selection
-from sklearn import pipeline
+from sklearn import model_selection, pipeline
 from sklearn.feature_extraction import text
 
 from analyzer.labeler import labeler
-from utils import jsonhandler
-from utils import timenormalizer
+from utils import jsonhandler, timenormalizer
 
 X = Tuple[str, timenormalizer.TimeExpressions]
 Y = labeler.Label
@@ -29,13 +23,16 @@ class Wrapper:
     """Wrapper of scikit-learn."""
 
     def __init__(self, classifier, text_divider):
-        self._clf = pipeline.Pipeline([
-            ("vect", text.CountVectorizer(analyzer=text_divider.extract_words)),
-            ("clf", classifier),
-        ])
+        self._clf = pipeline.Pipeline(
+            [
+                ("vect", text.CountVectorizer(analyzer=text_divider.extract_words)),
+                ("clf", classifier),
+            ]
+        )
 
-    def cross_validate(self, x: List[X], y: List[Y],
-                       y_true: Optional[List[Y]] = None, size_train=None):
+    def cross_validate(
+        self, x: List[X], y: List[Y], y_true: Optional[List[Y]] = None, size_train=None
+    ):
         """
         Args:
             x: X.
@@ -61,8 +58,7 @@ class Wrapper:
         kf.get_n_splits(x)
         for train_index, test_index in kf.split(x):
             if size_train is not None:
-                test_index = np.concatenate(
-                    [test_index, train_index[size_train:]])
+                test_index = np.concatenate([test_index, train_index[size_train:]])
                 train_index = train_index[:size_train]
             x_train, x_test = x[train_index], x[test_index]
             y_train, y_test = y[train_index], y_true[test_index]
@@ -80,14 +76,12 @@ class Wrapper:
             y_time_ = None
             if y_bool_:
                 # Restore datetime.
-                for (_, (since, until)) in time_expressions:
+                for _, (since, until) in time_expressions:
                     if until is None:  # definite time
-                        y_time_ = (since if y_time_ is None
-                                   else max(since, y_time_))
+                        y_time_ = since if y_time_ is None else max(since, y_time_)
                 if y_time_ is None:  # only dates
-                    for (_, (_, until)) in time_expressions:
-                        y_time_ = (until if y_time_ is None
-                                   else max(until, y_time_))
+                    for _, (_, until) in time_expressions:
+                        y_time_ = until if y_time_ is None else max(until, y_time_)
             y_time.append(y_time_)
         return y_time
 
@@ -109,8 +103,7 @@ class Wrapper:
                         ttp += 1
 
         try:
-            mcc = (tp * tn - fp * fn) / math.sqrt(
-                (tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+            mcc = (tp * tn - fp * fn) / math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
         except ZeroDivisionError:
             mcc = np.NaN
 
@@ -125,9 +118,14 @@ class TextDivider:
     _PATH = os.path.abspath(__file__ + "/../../../data/words.json")
     _tagger = MeCab.Tagger("-Ochasen")
 
-    def __init__(self, parsed_texts_for_tf_table: Optional[List[X]] = None,
-                 lower_bound=0, pos_include=None, top_k=None,
-                 top_k_type="frequentWords"):
+    def __init__(
+        self,
+        parsed_texts_for_tf_table: Optional[List[X]] = None,
+        lower_bound=0,
+        pos_include=None,
+        top_k=None,
+        top_k_type="frequentWords",
+    ):
         """
         Args:
             parsed_texts_for_tf_table: List of
@@ -143,7 +141,7 @@ class TextDivider:
             top_k_type: "frequentWords" or "importantWordsPred" or
                 "importantWordsTrue".
         """
-        self._tf = {}  # type: Dict[str, int]
+        self._tf = {}  # type: dict[str, int]
         self._tf_is_locked = True
         self._lower_bound = lower_bound
         self._pos_include = pos_include

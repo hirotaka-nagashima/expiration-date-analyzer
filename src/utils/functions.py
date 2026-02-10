@@ -8,11 +8,11 @@ def sigmoid(x):
 
 
 def power_law(x, a, c):
-    return c * (x ** a)
+    return c * (x**a)
 
 
 def power_law_with_exponential_cutoff(x, a, b, c):
-    return c * (x ** a) * (np.e ** (b * x))
+    return c * (x**a) * (np.e ** (b * x))
 
 
 def centered_moving_average(x, width: int, excludes_edges=False):

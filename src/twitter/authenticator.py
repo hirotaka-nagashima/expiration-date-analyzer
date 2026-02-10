@@ -9,8 +9,7 @@ from twitter import api
 class Credentials:
     """Data structure used only by the Authenticator."""
 
-    def __init__(self, consumer_key, consumer_secret,
-                 access_token, access_secret):
+    def __init__(self, consumer_key, consumer_secret, access_token, access_secret):
         """
         Args:
             consumer_key: Consumer key for an app.
@@ -37,11 +36,14 @@ class Authenticator:
             raw_credentials = json.load(file)["credentials"]
         self._credentials.clear()
         for r in raw_credentials:  # each app
-            self._credentials.append(Credentials(
-                consumer_key=r["consumerKey"],
-                consumer_secret=r["consumerSecret"],
-                access_token=r["accessToken"],
-                access_secret=r["accessSecret"]))
+            self._credentials.append(
+                Credentials(
+                    consumer_key=r["consumerKey"],
+                    consumer_secret=r["consumerSecret"],
+                    access_token=r["accessToken"],
+                    access_secret=r["accessSecret"],
+                )
+            )
 
     def authenticate(self) -> api.API:
         """Authenticates us and returns the api.API.

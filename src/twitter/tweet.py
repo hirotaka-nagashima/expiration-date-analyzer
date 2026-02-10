@@ -12,7 +12,9 @@ class Tweet:
 
         # Attribute "text" or "full_text" is set according to the parameter
         # "tweet_mode" on a request.
-        def replace_newlines(s, new): return new.join(s.splitlines())
+        def replace_newlines(s, new):
+            return new.join(s.splitlines())
+
         self.text = getattr(raw_tweet, "text", None)  # type: Optional
         if self.text is not None:
             self.text = replace_newlines(self.text, " ")
@@ -24,7 +26,10 @@ class Tweet:
             raise AttributeError(message)
 
         entities = getattr(raw_tweet, "entities")
-        def has(key): return key in entities and bool(entities[key])
+
+        def has(key):
+            return key in entities and bool(entities[key])
+
         self.has_hashtags = has("hashtags")
         self.has_media = has("media")
         self.has_urls = has("urls")
@@ -47,5 +52,4 @@ class Tweet:
         self.retweeted_id = getattr(retweeted, "id", None)  # type: Optional[ID]
 
         self.shown_at = shown_at.replace(microsecond=0)
-        self.elapsed_time = int(
-            (self.shown_at - self.created_at).total_seconds())
+        self.elapsed_time = int((self.shown_at - self.created_at).total_seconds())

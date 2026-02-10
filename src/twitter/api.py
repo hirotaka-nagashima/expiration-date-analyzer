@@ -1,16 +1,11 @@
 import collections
 import datetime as dt
-from typing import Deque
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
+from typing import Deque, Dict, Iterable, List, Optional
 
 import tweepy
 import tzlocal
 
-from twitter import error
-from twitter import tweet
+from twitter import error, tweet
 
 
 class API:
@@ -21,49 +16,32 @@ class API:
         # https://developer.twitter.com/en/docs/basics/rate-limits
         self._api_selectors = {
             # POST statuses/update
-            "update_status":
-                TweepyAPISelector(user_auth_limit=25, app_auth_limit=0),
-            
+            "update_status": TweepyAPISelector(user_auth_limit=25, app_auth_limit=0),
             # GET followers/ids
-            "followers_ids":
-                TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
-
+            "followers_ids": TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
             # GET friends/ids
-            "friends_ids":
-                TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
-
+            "friends_ids": TweepyAPISelector(user_auth_limit=15, app_auth_limit=15),
             # GET search/tweets
-            "search":
-                TweepyAPISelector(user_auth_limit=180, app_auth_limit=450),
-
+            "search": TweepyAPISelector(user_auth_limit=180, app_auth_limit=450),
             # GET statuses/lookup
-            "statuses_lookup":
-                TweepyAPISelector(user_auth_limit=900, app_auth_limit=300),
-
+            "statuses_lookup": TweepyAPISelector(user_auth_limit=900, app_auth_limit=300),
             # GET statuses/retweets/:id
-            "retweets":
-                TweepyAPISelector(user_auth_limit=75, app_auth_limit=300),
-
+            "retweets": TweepyAPISelector(user_auth_limit=75, app_auth_limit=300),
             # GET statuses/show/:id
-            "get_status":
-                TweepyAPISelector(user_auth_limit=900, app_auth_limit=900),
-
+            "get_status": TweepyAPISelector(user_auth_limit=900, app_auth_limit=900),
             # GET statuses/user_timeline
-            "user_timeline":
-                TweepyAPISelector(user_auth_limit=900, app_auth_limit=1500),
-
+            "user_timeline": TweepyAPISelector(user_auth_limit=900, app_auth_limit=1500),
             # GET users/lookup
-            "lookup_users":
-                TweepyAPISelector(user_auth_limit=900, app_auth_limit=300),
+            "lookup_users": TweepyAPISelector(user_auth_limit=900, app_auth_limit=300),
         }
 
     @property
     def total_limit(self) -> Dict[str, int]:
         return {k: v.total_limit for k, v in self._api_selectors.items()}
 
-    def append(self,
-               api_user_auth: Optional[tweepy.API] = None,
-               api_app_auth: Optional[tweepy.API] = None):
+    def append(
+        self, api_user_auth: Optional[tweepy.API] = None, api_app_auth: Optional[tweepy.API] = None
+    ):
         for api_selector in self._api_selectors.values():
             api_selector.append(api_user_auth, api_app_auth)
 
@@ -233,17 +211,23 @@ class TweepyAPISelector:
 
     @property
     def _current_break_secs(self):
-        return 0 if not self._current_limit_reached else (
-            self._current_reset_datetime - dt.datetime.now()).total_seconds()
+        return (
+            0
+            if not self._current_limit_reached
+            else (self._current_reset_datetime - dt.datetime.now()).total_seconds()
+        )
 
     @property
     def _next_break_secs(self):
-        return 0 if not self._next_limit_reached else (
-            self._next_reset_datetime - dt.datetime.now()).total_seconds()
+        return (
+            0
+            if not self._next_limit_reached
+            else (self._next_reset_datetime - dt.datetime.now()).total_seconds()
+        )
 
-    def append(self,
-               api_user_auth: Optional[tweepy.API] = None,
-               api_app_auth: Optional[tweepy.API] = None):
+    def append(
+        self, api_user_auth: Optional[tweepy.API] = None, api_app_auth: Optional[tweepy.API] = None
+    ):
         def append_api(api, limit):
             if api is not None:
                 if 1 <= limit:
@@ -265,8 +249,7 @@ class TweepyAPISelector:
             raise error.TotalRateLimitError(float("inf"))
         if self._current_limit_reached:
             if self._next_limit_reached:
-                min_break_secs = min(self._current_break_secs,
-                                     self._next_break_secs)
+                min_break_secs = min(self._current_break_secs, self._next_break_secs)
                 raise error.TotalRateLimitError(min_break_secs)
             self._switch()
         return self._current_api
@@ -281,7 +264,8 @@ class TweepyAPISelector:
             if "x-rate-limit-reset" in headers:
                 value = int(headers["x-rate-limit-reset"])  # Unix timestamp
                 self._current_reset_datetime = dt.datetime.fromtimestamp(
-                    value, tzlocal.get_localzone()).replace(tzinfo=None)
+                    value, tzlocal.get_localzone()
+                ).replace(tzinfo=None)
 
     def log_rate_limit_error(self):
         self.log_request()

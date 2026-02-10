@@ -1,14 +1,11 @@
 """Manages data flow to evaluate classifiers."""
 
 import os
-from typing import List
-from typing import Tuple
+from typing import List, Tuple
 
-from sklearn import model_selection
-from sklearn import naive_bayes
+from sklearn import model_selection, naive_bayes
 
-from analyzer import filters
-from analyzer import timeextractor
+from analyzer import filters, timeextractor
 from analyzer.labeler import labeler
 from estimator import sklearn
 from logger import fileio
@@ -26,9 +23,9 @@ def do(data_root_dir):
         labeler.AutoLabeler.run(dir_)
 
     dataset = _load_dataset(dirs, additional_extension="bsig0.9ry1w101o0")
-    x, _, y_pred, _, y_true, _ = \
-        model_selection.train_test_split(
-            *dataset, test_size=0.2, random_state=0)
+    x, _, y_pred, _, y_true, _ = model_selection.train_test_split(
+        *dataset, test_size=0.2, random_state=0
+    )
 
     _cross_validate((x, y_pred, y_true))
 
@@ -51,8 +48,7 @@ def _load_dataset(dirs, additional_extension=None) -> _Dataset:
         filter_ = filters.by_time_dependency(all_time_expressions)
         io = fileio.CSVHandler(dir_)
         tweets_df = io.read_tweets(index_col="id", filter_=filter_)
-        time_estimated = labeler.AutoLabeler.load_labels(
-            dir_, additional_extension)
+        time_estimated = labeler.AutoLabeler.load_labels(dir_, additional_extension)
         time_labeled = labeler.HandLabeler.load_labels(dir_)
 
         # Register data.
@@ -77,9 +73,21 @@ def _cross_validate(dataset: _Dataset):
     x, y_pred, y_true = dataset
     text_divider = sklearn.TextDivider(
         top_k=729,
-        pos_include={"その他", "フィラー", "感動詞", "記号",
-                     "形容詞", "助詞", "助動詞", "接続詞", "接頭詞",
-                     # "動詞",
-                     "副詞", "名詞", "連体詞"})
+        pos_include={
+            "その他",
+            "フィラー",
+            "感動詞",
+            "記号",
+            "形容詞",
+            "助詞",
+            "助動詞",
+            "接続詞",
+            "接頭詞",
+            # "動詞",
+            "副詞",
+            "名詞",
+            "連体詞",
+        },
+    )
     sw = sklearn.Wrapper(naive_bayes.BernoulliNB(), text_divider)
     sw.cross_validate(x, y_pred, y_true=y_true)

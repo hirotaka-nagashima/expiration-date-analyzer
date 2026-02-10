@@ -4,11 +4,9 @@ import datetime as dt
 from typing import Optional
 
 import sutime
-from dateutil import parser
-from dateutil import relativedelta
+from dateutil import parser, relativedelta
 
-from utils.timenormalizer import Duration
-from utils.timenormalizer import TimeExpressions
+from utils.timenormalizer import Duration, TimeExpressions
 
 _tagger = None  # type: Optional[sutime.SUTime]
 
@@ -19,8 +17,7 @@ def load():
     _tagger = sutime.SUTime()
 
 
-def _extract_time(sentence,
-                  doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def _extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:
@@ -46,9 +43,11 @@ def _extract_time(sentence,
         """
 
         def increment(raw_date: str) -> dt.datetime:
-            delta = [relativedelta.relativedelta(years=1),
-                     relativedelta.relativedelta(months=1),
-                     relativedelta.relativedelta(days=1)]
+            delta = [
+                relativedelta.relativedelta(years=1),
+                relativedelta.relativedelta(months=1),
+                relativedelta.relativedelta(days=1),
+            ]
             index = len(raw_date.split("-")) - 1
             return parser.isoparse(raw_date) + delta[index]
 
@@ -72,8 +71,7 @@ def _extract_time(sentence,
     return result
 
 
-def extract_time(sentence,
-                 doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:

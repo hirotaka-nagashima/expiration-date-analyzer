@@ -7,9 +7,7 @@ from typing import Optional
 
 import tweepy
 
-from twitter import api
-from twitter import error
-from twitter import tweet
+from twitter import api, error, tweet
 
 
 class Reporter:
@@ -46,8 +44,7 @@ class Reporter:
                 self._parent_id = self._api.update_status(status=status).id
             else:
                 # Reply to the tweet having the self._parent_id.
-                self._api.update_status(status=status,
-                                        in_reply_to_status_id=self._parent_id)
+                self._api.update_status(status=status, in_reply_to_status_id=self._parent_id)
         except (error.TotalRateLimitError, tweepy.TweepError) as e:
             # NOTE: Do not call self._tweet_error() which can cause an infinite
             # loop.

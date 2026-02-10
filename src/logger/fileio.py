@@ -3,9 +3,7 @@ import csv
 import datetime as dt
 import glob
 import os
-from typing import Callable
-from typing import Iterable
-from typing import Optional
+from typing import Callable, Iterable, Optional
 
 import pandas as pd
 from pandas.api import types
@@ -74,28 +72,47 @@ class CSVHandler(FileIO):
         # such as self.DTYPE. For some items, it also corresponds to a name of
         # an instance variable of the Tweet object.
         self.HEADER = {
-            "tweets":
-                ["id", "shown_at",  # primary key
-                 "created_at", "full_text",
-                 "has_hashtags", "has_media", "has_urls",
-                 "has_user_mentions", "has_symbols", "has_polls",
-                 "user_id", "user_screen_name",
-                 "user_followers_count", "user_friends_count",
-                 "user_verified", "user_statuses_count",
-                 "retweet_count", "favorite_count"],  # for Tweet objects
-            "dynamics":
-                ["id", "elapsed_time",  # primary key
-                 "user_followers_count", "user_friends_count",
-                 "user_statuses_count",
-                 "retweet_count", "favorite_count"],  # for Tweet objects
-            "retweets":
-                ["id",  # primary key
-                 "retweeted_id", "created_at",
-                 "user_id", "user_screen_name",
-                 "user_followers_count", "user_friends_count",
-                 "user_verified", "user_statuses_count"],  # for Tweet objects
-            "relationship":
-                ["shown_at", "to", "from"],
+            "tweets": [
+                "id",
+                "shown_at",  # primary key
+                "created_at",
+                "full_text",
+                "has_hashtags",
+                "has_media",
+                "has_urls",
+                "has_user_mentions",
+                "has_symbols",
+                "has_polls",
+                "user_id",
+                "user_screen_name",
+                "user_followers_count",
+                "user_friends_count",
+                "user_verified",
+                "user_statuses_count",
+                "retweet_count",
+                "favorite_count",
+            ],  # for Tweet objects
+            "dynamics": [
+                "id",
+                "elapsed_time",  # primary key
+                "user_followers_count",
+                "user_friends_count",
+                "user_statuses_count",
+                "retweet_count",
+                "favorite_count",
+            ],  # for Tweet objects
+            "retweets": [
+                "id",  # primary key
+                "retweeted_id",
+                "created_at",
+                "user_id",
+                "user_screen_name",
+                "user_followers_count",
+                "user_friends_count",
+                "user_verified",
+                "user_statuses_count",
+            ],  # for Tweet objects
+            "relationship": ["shown_at", "to", "from"],
         }
 
         dtype = {
@@ -120,7 +137,6 @@ class CSVHandler(FileIO):
             "retweeted_id": "category",
             "shown_at": "str",
             "elapsed_time": "uint32",
-
             # others
             "to": "category",
             "from": "category",
@@ -129,10 +145,12 @@ class CSVHandler(FileIO):
 
         # Categorize them based on the self.HEADER.
         names = ["tweets", "dynamics", "retweets", "relationship"]
-        def filter_dict(dict_, keys): return {k: dict_[k] for k in keys}
+
+        def filter_dict(dict_, keys):
+            return {k: dict_[k] for k in keys}
+
         self.DTYPE = {n: filter_dict(dtype, self.HEADER[n]) for n in names}
-        self.PARSE_DATES = {n: list(set(parse_dates) & set(self.HEADER[n]))
-                            for n in names}
+        self.PARSE_DATES = {n: list(set(parse_dates) & set(self.HEADER[n])) for n in names}
 
     def read_tweets(
         self, index_col=None, filter_: Optional[Filter] = None
@@ -166,9 +184,12 @@ class CSVHandler(FileIO):
         # Read data from each file.
         dfs = []
         for src in srcs:
-            df = pd.read_csv(src, dtype=self.DTYPE[name],
-                             parse_dates=self.PARSE_DATES[name],
-                             encoding=self.ENCODING)
+            df = pd.read_csv(
+                src,
+                dtype=self.DTYPE[name],
+                parse_dates=self.PARSE_DATES[name],
+                encoding=self.ENCODING,
+            )
             if filter_ is not None:
                 filter_(df)
             dfs.append(df)
@@ -182,8 +203,7 @@ class CSVHandler(FileIO):
                 if dtype == "category":
                     union = types.union_categoricals([df[cname] for df in dfs])
                     for df in dfs:
-                        df[cname] = pd.Categorical(
-                            df[cname], categories=union.categories)
+                        df[cname] = pd.Categorical(df[cname], categories=union.categories)
             concatenated_df = pd.concat(dfs)
 
         if index_col is not None:
@@ -208,8 +228,11 @@ class CSVHandler(FileIO):
 
     def log_relationship(self, shown_at, ids, to=None, from_=None):
         name = "relationship"
-        rows = ([[shown_at, to, i] for i in ids] if from_ is None
-                else [[shown_at, i, from_] for i in ids])
+        rows = (
+            [[shown_at, to, i] for i in ids]
+            if from_ is None
+            else [[shown_at, i, from_] for i in ids]
+        )
         self._log(name, rows)
 
     def _log(self, name, rows):

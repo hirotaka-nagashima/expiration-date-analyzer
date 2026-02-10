@@ -16,8 +16,10 @@ def load(src):
 
 def dump(data, dest):
     with open(dest, "w", encoding=ENCODING) as file:
+
         def to_str(o):
             return getattr(o, "isoformat", getattr(o, "__str__", None))()
+
         json.dump(data, file, ensure_ascii=False, indent=2, default=to_str)
 
 

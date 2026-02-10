@@ -9,12 +9,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from scipy import optimize
 
-from analyzer import filters
-from analyzer import timeextractor
+from analyzer import filters, timeextractor
 from analyzer.labeler import labeler
 from logger import fileio
-from utils import functions
-from utils import timenormalizer
+from utils import functions, timenormalizer
 
 _AllTimeExpressions = timeextractor.AllTimeExpressions
 _TimeExpressions = timenormalizer.TimeExpressions
@@ -25,8 +23,7 @@ LOG_FILENAME = "log.txt"
 plt.style.use("ggplot")
 
 
-def show_dynamics(data_dir, shows_retweet, shows_favorite,
-                  logscale=False, exports_to=None):
+def show_dynamics(data_dir, shows_retweet, shows_favorite, logscale=False, exports_to=None):
     all_time_expressions = timeextractor.load_time_expressions(data_dir)
     time_labeled = labeler.HandLabeler.load_labels(data_dir)
 
@@ -46,7 +43,8 @@ def show_dynamics(data_dir, shows_retweet, shows_favorite,
             exports_to=exports_to,
             shortened_id=i,
             time_expressions=all_time_expressions[id_],
-            label=time_labeled[id_])
+            label=time_labeled[id_],
+        )
 
 
 def show_dynamics_of(
@@ -58,7 +56,7 @@ def show_dynamics_of(
     exports_to=None,
     shortened_id=None,
     time_expressions: Optional[_TimeExpressions] = None,
-    label: labeler.Label = None
+    label: labeler.Label = None,
 ):
     # -1:, 0: RT, 1: FAV, 2: RT&FAV
     mode = shows_retweet + shows_favorite * 2 - 1
@@ -68,8 +66,7 @@ def show_dynamics_of(
     # Plot the data.
     df = dynamics_df.set_index("elapsed_time")  # also to copy
     df.index /= 60 * 60  # seconds to hours
-    columns = [["retweet_count"], ["favorite_count"],
-               ["favorite_count", "retweet_count"]][mode]
+    columns = [["retweet_count"], ["favorite_count"], ["favorite_count", "retweet_count"]][mode]
     df = df.loc[:, columns]
     df.loc[0] = 0
     df.sort_index(inplace=True)
@@ -110,13 +107,13 @@ def show_dynamics_of(
     plt.close()
 
 
-def _highlight_time(created_at: dt.datetime,
-                    since: dt.datetime,
-                    until: Optional[dt.datetime] = None,
-                    color="k"):
+def _highlight_time(
+    created_at: dt.datetime, since: dt.datetime, until: Optional[dt.datetime] = None, color="k"
+):
     def to_elapsed_time(datetime):
         delta = datetime - (created_at + dt.timedelta(hours=9))
         return delta.total_seconds() / (60 * 60)
+
     since = to_elapsed_time(since)
     if until is None:
         until = since + 0.2
@@ -141,10 +138,13 @@ def _plot_diff_trendline(x, y, with_exponential_cutoff):
         # Try curve fitting again from the calculated parameters.
         f = functions.power_law_with_exponential_cutoff
         popt = optimize.curve_fit(
-            f, x, y,
+            f,
+            x,
+            y,
             p0=[popt[0][0], 0, popt[0][1]],
             bounds=([-np.inf, -np.inf, 0], [0, 0, np.inf]),
-            maxfev=100000)
+            maxfev=100000,
+        )
         label = _to_label(popt, ndigits=3, names=["a", "b", "c"])
         plt.plot(x, f(x, *popt[0]), label=label)
     else:

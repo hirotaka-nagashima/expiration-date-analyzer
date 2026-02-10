@@ -1,4 +1,5 @@
 import math
+import os
 import re
 from typing import Dict
 from typing import Iterable
@@ -121,7 +122,7 @@ class Wrapper:
 class TextDivider:
     """Divides a text into meaningful words."""
 
-    _PATH = r"C:\Users\Admin\Cloud\Study\Kyoto University\Bachelor\Research\Programs\data\words.json"
+    _PATH = os.path.abspath(__file__ + "/../../../data/words.json")
     _tagger = MeCab.Tagger("-Ochasen")
 
     def __init__(self, parsed_texts_for_tf_table: Optional[List[X]] = None,

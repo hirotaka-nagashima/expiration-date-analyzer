@@ -1,14 +1,13 @@
 """Extracts and normalizes time in a English sentence."""
 
 import datetime as dt
-from typing import Optional
 
 import sutime
 from dateutil import parser, relativedelta
 
 from utils.timenormalizer import Duration, TimeExpressions
 
-_tagger = None  # type: Optional[sutime.SUTime]
+_tagger: sutime.SUTime | None = None
 
 
 def load():
@@ -17,7 +16,7 @@ def load():
     _tagger = sutime.SUTime()
 
 
-def _extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def _extract_time(sentence, doc_time: dt.datetime | None = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:
@@ -71,7 +70,7 @@ def _extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpre
     return result
 
 
-def extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def extract_time(sentence, doc_time: dt.datetime | None = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:

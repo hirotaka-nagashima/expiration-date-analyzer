@@ -1,6 +1,7 @@
 import collections
 import datetime as dt
-from typing import Deque, Dict, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Deque
 
 import tweepy
 import tzlocal
@@ -36,11 +37,11 @@ class API:
         }
 
     @property
-    def total_limit(self) -> Dict[str, int]:
+    def total_limit(self) -> dict[str, int]:
         return {k: v.total_limit for k, v in self._api_selectors.items()}
 
     def append(
-        self, api_user_auth: Optional[tweepy.API] = None, api_app_auth: Optional[tweepy.API] = None
+        self, api_user_auth: tweepy.API | None = None, api_app_auth: tweepy.API | None = None
     ):
         for api_selector in self._api_selectors.values():
             api_selector.append(api_user_auth, api_app_auth)
@@ -51,31 +52,31 @@ class API:
         """
         return API._to_tweet(self._request("update_status", **kwargs))
 
-    def followers_ids(self, **kwargs) -> List[tweet.ID]:
+    def followers_ids(self, **kwargs) -> list[tweet.ID]:
         """GET followers/ids
         http://docs.tweepy.org/en/latest/api.html#API.followers_ids
         """
         return self._request("followers_ids", **kwargs)
 
-    def friends_ids(self, **kwargs) -> List[tweet.ID]:
+    def friends_ids(self, **kwargs) -> list[tweet.ID]:
         """GET friends/ids
         http://docs.tweepy.org/en/latest/api.html#API.friends_ids
         """
         return self._request("friends_ids", **kwargs)
 
-    def search(self, **kwargs) -> List[tweet.Tweet]:
+    def search(self, **kwargs) -> list[tweet.Tweet]:
         """GET search/tweets
         http://docs.tweepy.org/en/latest/api.html#API.search
         """
         return API._to_tweets(self._request("search", **kwargs))
 
-    def statuses_lookup(self, **kwargs) -> List[tweet.Tweet]:
+    def statuses_lookup(self, **kwargs) -> list[tweet.Tweet]:
         """GET statuses/lookup
         http://docs.tweepy.org/en/latest/api.html#API.statuses_lookup
         """
         return API._to_tweets(self._request("statuses_lookup", **kwargs))
 
-    def retweets(self, **kwargs) -> List[tweet.Tweet]:
+    def retweets(self, **kwargs) -> list[tweet.Tweet]:
         """GET statuses/retweets/:id
         http://docs.tweepy.org/en/latest/api.html#API.retweets
         """
@@ -87,7 +88,7 @@ class API:
         """
         return API._to_tweet(self._request("get_status", **kwargs))
 
-    def user_timeline(self, **kwargs) -> List[tweet.Tweet]:
+    def user_timeline(self, **kwargs) -> list[tweet.Tweet]:
         """GET statuses/user_timeline
         http://docs.tweepy.org/en/latest/api.html#API.user_timeline
         """
@@ -145,10 +146,10 @@ class TweepyAPISelector:
         self._total_limit = 0  # for lighter processing
 
         # [0] is always selected by rotating.
-        self._apis = collections.deque()  # type: Deque[tweepy.API]
-        self._limits = collections.deque()  # type: Deque[int]
-        self._num_remains = collections.deque()  # type: Deque[int]
-        self._reset_datetime = collections.deque()  # type: Deque[dt.datetime]
+        self._apis: Deque[tweepy.API] = collections.deque()
+        self._limits: Deque[int] = collections.deque()
+        self._num_remains: Deque[int] = collections.deque()
+        self._reset_datetime: Deque[dt.datetime] = collections.deque()
 
     @property
     def total_limit(self):
@@ -226,7 +227,7 @@ class TweepyAPISelector:
         )
 
     def append(
-        self, api_user_auth: Optional[tweepy.API] = None, api_app_auth: Optional[tweepy.API] = None
+        self, api_user_auth: tweepy.API | None = None, api_app_auth: tweepy.API | None = None
     ):
         def append_api(api, limit):
             if api is not None:

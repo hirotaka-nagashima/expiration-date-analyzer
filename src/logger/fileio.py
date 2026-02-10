@@ -3,7 +3,8 @@ import csv
 import datetime as dt
 import glob
 import os
-from typing import Callable, Iterable, Optional
+from collections.abc import Iterable
+from typing import Callable
 
 import pandas as pd
 from pandas.api import types
@@ -17,27 +18,21 @@ class FileIO(abc.ABC):
     """Interface handling files."""
 
     @abc.abstractmethod
-    def read_tweets(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_tweets(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         pass
 
     @abc.abstractmethod
-    def read_dynamics(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_dynamics(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         pass
 
     @abc.abstractmethod
-    def read_retweets(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_retweets(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         pass
 
     @abc.abstractmethod
     def read_relationship(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+        self, index_col=None, filter_: Filter | None = None
+    ) -> pd.DataFrame | None:
         pass
 
     @abc.abstractmethod
@@ -152,29 +147,21 @@ class CSVHandler(FileIO):
         self.DTYPE = {n: filter_dict(dtype, self.HEADER[n]) for n in names}
         self.PARSE_DATES = {n: list(set(parse_dates) & set(self.HEADER[n])) for n in names}
 
-    def read_tweets(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_tweets(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         return self._read("tweets", index_col, filter_)
 
-    def read_dynamics(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_dynamics(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         return self._read("dynamics", index_col, filter_)
 
-    def read_retweets(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def read_retweets(self, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         return self._read("retweets", index_col, filter_)
 
     def read_relationship(
-        self, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+        self, index_col=None, filter_: Filter | None = None
+    ) -> pd.DataFrame | None:
         return self._read("relationship", index_col, filter_)
 
-    def _read(
-        self, name, index_col=None, filter_: Optional[Filter] = None
-    ) -> Optional[pd.DataFrame]:
+    def _read(self, name, index_col=None, filter_: Filter | None = None) -> pd.DataFrame | None:
         # Get all paths for split files.
         filename = f"{name}_*.csv"
         srcs = glob.glob(os.path.join(self.DATA_DIR, filename))

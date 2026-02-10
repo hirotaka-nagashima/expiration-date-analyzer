@@ -2,7 +2,6 @@ import abc
 import datetime as dt
 import os
 import re
-from typing import Dict, List, Optional, Tuple
 
 import eel
 import numpy as np
@@ -17,10 +16,10 @@ from utils import functions, jsonhandler, timenormalizer
 _AllTimeExpressions = timeextractor.AllTimeExpressions
 _TimeExpressions = timenormalizer.TimeExpressions
 
-Label = Optional[dt.datetime]
-Labels = Dict[str, Label]
-_Label = Optional[str]
-_Labels = Dict[str, _Label]
+Label = dt.datetime | None
+Labels = dict[str, Label]
+_Label = str | None
+_Labels = dict[str, _Label]
 
 
 class Labeler(abc.ABC):
@@ -40,7 +39,7 @@ class Labeler(abc.ABC):
         path = cls.path(data_dir)
         if additional_extension is not None:
             path += f".{additional_extension}"
-        data = jsonhandler.load(path)  # type: _Labels
+        data: _Labels = jsonhandler.load(path)
         return {k: None if v is None else parser.isoparse(v) for k, v in data.items()}
 
     @staticmethod
@@ -60,9 +59,9 @@ class AutoLabeler(Labeler):
     REFERRED_COLUMN = "retweet_count"
     TOLERANCE = 60 * 60  # secs
 
-    WIDTHS_MA = (300, 1, 1)  # type: Tuple[int, int, int]
-    A_SIGMOID = 100  # type: float
-    B_SIGMOID = 0.9  # type: float
+    WIDTHS_MA: tuple[int, int, int] = (300, 1, 1)
+    A_SIGMOID: float = 100
+    B_SIGMOID: float = 0.9
 
     @staticmethod
     def run(data_dir) -> None:
@@ -81,7 +80,7 @@ class AutoLabeler(Labeler):
         dynamics_df = io.read_dynamics(index_col="elapsed_time", filter_=filter_)
 
         # Label them.
-        labels = {}  # type: Labels
+        labels: Labels = {}
         for id_, df in dynamics_df.groupby("id", observed=True):
             if id_ not in ids_to_be_labeled:
                 continue
@@ -106,10 +105,10 @@ class AutoLabeler(Labeler):
     def _calculate_ddy_for_estimation(
         dynamics_df: pd.DataFrame,
         uses_savgol_filter=False,
-        smoothing_widths: Tuple[int, int, int] = WIDTHS_MA,
-        smoothing_orders: Optional[Tuple[int, int, int]] = None,
+        smoothing_widths: tuple[int, int, int] = WIDTHS_MA,
+        smoothing_orders: tuple[int, int, int] | None = None,
         referred_column: str = REFERRED_COLUMN,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Args:
             dynamics_df: Dynamics of a tweet.
@@ -181,7 +180,7 @@ class AutoLabeler(Labeler):
 
     @staticmethod
     def try_with_various_parameters(
-        data_dir, bounds: List[Tuple[float, float]], division_number: int
+        data_dir, bounds: list[tuple[float, float]], division_number: int
     ):
         """Calculates confusion matrices for each set of parameters."""
         all_time_expressions = timeextractor.load_time_expressions(data_dir)
@@ -220,10 +219,10 @@ class AutoLabeler(Labeler):
         time_expressions: _TimeExpressions,
         time_labeled: Label,
         created_at: dt.datetime,
-        bounds: List[Tuple[float, float]],
+        bounds: list[tuple[float, float]],
         division_number: int,
-        confusion_matrices: List[List[int]],
-        tp_time: List[int],
+        confusion_matrices: list[list[int]],
+        tp_time: list[int],
     ):
         if dynamics_df.empty:
             return
@@ -284,10 +283,10 @@ class HandLabeler(Labeler):
     _HTML_DIR = os.path.abspath(__file__ + "/../")
     _HTML_FILENAME = "index.html"
 
-    _index = None  # type: Optional[int]
-    _tweets_df = None  # type: Optional[pd.DataFrame]
-    _all_time_expressions = None  # type: Optional[_AllTimeExpressions]
-    _labels = None  # type: Optional[_Labels]
+    _index: int | None = None
+    _tweets_df: pd.DataFrame | None = None
+    _all_time_expressions: _AllTimeExpressions | None = None
+    _labels: _Labels | None = None
 
     @staticmethod
     def run(data_dir) -> None:

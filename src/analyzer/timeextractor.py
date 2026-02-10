@@ -2,7 +2,6 @@
 
 import datetime as dt
 import os
-from typing import Dict, Optional
 
 import requests
 from dateutil import parser
@@ -11,7 +10,7 @@ from logger import fileio
 from utils import jsonhandler, timenormalizer
 
 _TweetID = str
-AllTimeExpressions = Dict[_TweetID, timenormalizer.TimeExpressions]
+AllTimeExpressions = dict[_TweetID, timenormalizer.TimeExpressions]
 
 FILENAME = "time.json"
 
@@ -44,7 +43,7 @@ def load_time_expressions(data_dir) -> AllTimeExpressions:
         for index, raw_time_expression in enumerate(raw_time_expressions):
 
             def to_time_expression(
-                keyword: str, since: str, until: Optional[str]
+                keyword: str, since: str, until: str | None
             ) -> timenormalizer.TimeExpression:
                 """Casts a time expression loaded from a json."""
                 since = parser.isoparse(since)

@@ -3,7 +3,7 @@ import datetime as dt
 import itertools
 import math
 import time
-from typing import Callable, Deque, Optional, Set
+from typing import Callable, Deque
 
 import requests
 import tweepy
@@ -16,8 +16,8 @@ class Logger:
     """Logs tweets and tracks their dynamics."""
 
     def __init__(self, api_, io):
-        self._api = api_  # type: api.API
-        self._io = io  # type: fileio.FileIO
+        self._api: api.API = api_
+        self._io: fileio.FileIO = io
 
     def track_dynamics(
         self,
@@ -119,8 +119,8 @@ class Logger:
             prev_time = dt.datetime.now()
 
     def _search_tweets(
-        self, q, logged_ids: Set[tweet.ID], reporter_, count=100, max_count_to_log=100
-    ) -> Set[tweet.ID]:
+        self, q, logged_ids: set[tweet.ID], reporter_, count=100, max_count_to_log=100
+    ) -> set[tweet.ID]:
         """Searches for tweets and logs new tweets.
 
         Args:
@@ -192,11 +192,11 @@ class Logger:
     def _track_retweets(
         self,
         ids_to_track: Deque[tweet.ID],
-        ids_to_track_first: Set[tweet.ID],
-        logged_ids: Set[tweet.ID],
+        ids_to_track_first: set[tweet.ID],
+        logged_ids: set[tweet.ID],
         reporter_,
         count=100,
-    ) -> Optional[tweet.ID]:
+    ) -> tweet.ID | None:
         """Gets and logs retweets for a specified tweet.
 
         Args:
@@ -333,7 +333,7 @@ class Logger:
         reporter_.report_finish()
 
     def inquire_friends_from(
-        self, id_, max_distance, filter_: Optional[Callable[[tweepy.User], bool]] = None
+        self, id_, max_distance, filter_: Callable[[tweepy.User], bool] | None = None
     ):
         id_ = str(id_)
         friends = self._inquire_friends_from(id_, max_distance, filter_)
@@ -345,9 +345,9 @@ class Logger:
         self,
         id_: str,
         max_distance,
-        filter_: Optional[Callable[[tweepy.User], bool]] = None,
-        excluded_ids: Optional[Set[str]] = None,
-    ) -> Set[str]:
+        filter_: Callable[[tweepy.User], bool] | None = None,
+        excluded_ids: set[str] | None = None,
+    ) -> set[str]:
         """Logs all friends and returns ids of filtered friends."""
         if excluded_ids is None:
             excluded_ids = set()
@@ -389,9 +389,9 @@ class Logger:
         if type(e) is error.TotalRateLimitError:
             return True
         if type(e) is tweepy.TweepError:
-            tweep_error = e  # type: tweepy.TweepError
+            tweep_error: tweepy.TweepError = e
             if tweep_error.response is not None:
-                response = tweep_error.response  # type: requests.Response
+                response: requests.Response = tweep_error.response
                 if 500 <= response.status_code:  # Server is busy.
                     return True
                 if 400 <= response.status_code:  # Something is wrong.

@@ -3,7 +3,6 @@
 import collections
 import datetime as dt
 import json
-from typing import Optional
 
 import requests
 from dateutil import parser, relativedelta
@@ -27,7 +26,7 @@ def load_credentials(path):
         _app_ids.append(r)
 
 
-def _extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def _extract_time(sentence, doc_time: dt.datetime | None = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:
@@ -123,7 +122,7 @@ def _extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpre
     return result
 
 
-def extract_time(sentence, doc_time: Optional[dt.datetime] = None) -> TimeExpressions:
+def extract_time(sentence, doc_time: dt.datetime | None = None) -> TimeExpressions:
     """Extracts time expressions from a sentence.
 
     Args:

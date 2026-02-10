@@ -3,7 +3,6 @@ import inspect
 import os
 import secrets
 import sys
-from typing import Optional
 
 import tweepy
 
@@ -14,8 +13,8 @@ class Reporter:
     """Class to report running status and errors by tweeting."""
 
     def __init__(self, api_):
-        self._api = api_  # type: api.API
-        self._parent_id = None  # type: Optional[tweet.ID]
+        self._api: api.API = api_
+        self._parent_id: tweet.ID | None = None
 
     def report_beginning(self, status="Now running."):
         """Tweets a beginning and saves its ID for threading."""

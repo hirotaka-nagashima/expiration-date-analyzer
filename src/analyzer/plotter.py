@@ -2,7 +2,6 @@
 
 import datetime as dt
 import os
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -55,7 +54,7 @@ def show_dynamics_of(
     logscale=False,
     exports_to=None,
     shortened_id=None,
-    time_expressions: Optional[_TimeExpressions] = None,
+    time_expressions: _TimeExpressions | None = None,
     label: labeler.Label = None,
 ):
     # -1:, 0: RT, 1: FAV, 2: RT&FAV
@@ -108,7 +107,7 @@ def show_dynamics_of(
 
 
 def _highlight_time(
-    created_at: dt.datetime, since: dt.datetime, until: Optional[dt.datetime] = None, color="k"
+    created_at: dt.datetime, since: dt.datetime, until: dt.datetime | None = None, color="k"
 ):
     def to_elapsed_time(datetime):
         delta = datetime - (created_at + dt.timedelta(hours=9))

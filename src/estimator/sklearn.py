@@ -1,7 +1,7 @@
 import math
 import os
 import re
-from typing import Iterable, List, Optional, Tuple
+from collections.abc import Iterable
 
 import MeCab
 import numpy as np
@@ -11,12 +11,12 @@ from sklearn.feature_extraction import text
 from analyzer.labeler import labeler
 from utils import jsonhandler, timenormalizer
 
-X = Tuple[str, timenormalizer.TimeExpressions]
+X = tuple[str, timenormalizer.TimeExpressions]
 Y = labeler.Label
 _X = text.CountVectorizer
 _Y = bool
 
-Result = Tuple[Iterable[Y], Iterable[Y]]
+Result = tuple[Iterable[Y], Iterable[Y]]
 
 
 class Wrapper:
@@ -31,7 +31,7 @@ class Wrapper:
         )
 
     def cross_validate(
-        self, x: List[X], y: List[Y], y_true: Optional[List[Y]] = None, size_train=None
+        self, x: list[X], y: list[Y], y_true: list[Y] | None = None, size_train=None
     ):
         """
         Args:
@@ -53,7 +53,7 @@ class Wrapper:
         # Cross-validate manually because of distinction between y to train and
         # y to test: y_train is obtained from AutoLabeler but y_test is obtained
         # from HandLabeler.
-        results = []  # type: List[Result]
+        results: list[Result] = []
         kf = model_selection.KFold(shuffle=True, random_state=0)
         kf.get_n_splits(x)
         for train_index, test_index in kf.split(x):
@@ -70,7 +70,7 @@ class Wrapper:
         Wrapper._show_result(results)
 
     @staticmethod
-    def _restore_datetime(x, y_bool: List[_Y]) -> List[Y]:
+    def _restore_datetime(x, y_bool: list[_Y]) -> list[Y]:
         y_time = []
         for (_, time_expressions), y_bool_ in zip(x, y_bool):
             y_time_ = None
@@ -86,7 +86,7 @@ class Wrapper:
         return y_time
 
     @staticmethod
-    def _show_result(results: List[Result]):
+    def _show_result(results: list[Result]):
         # Calculate a confusion matrix.
         ttp, tp, fp, fn, tn = 0, 0, 0, 0, 0
         for result in results:
@@ -120,7 +120,7 @@ class TextDivider:
 
     def __init__(
         self,
-        parsed_texts_for_tf_table: Optional[List[X]] = None,
+        parsed_texts_for_tf_table: list[X] | None = None,
         lower_bound=0,
         pos_include=None,
         top_k=None,
@@ -129,7 +129,7 @@ class TextDivider:
         """
         Args:
             parsed_texts_for_tf_table: List of
-                Tuple[str, timenormalizer.TimeExpressions] used to construct a
+                tuple[str, timenormalizer.TimeExpressions] used to construct a
                 TF table. The table filters words according to lower_bound.
             lower_bound: Only words whose TF values are greater or equal to this
                 value will be extracted.
@@ -141,7 +141,7 @@ class TextDivider:
             top_k_type: "frequentWords" or "importantWordsPred" or
                 "importantWordsTrue".
         """
-        self._tf = {}  # type: dict[str, int]
+        self._tf: dict[str, int] = {}
         self._tf_is_locked = True
         self._lower_bound = lower_bound
         self._pos_include = pos_include

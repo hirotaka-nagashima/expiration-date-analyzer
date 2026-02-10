@@ -1,5 +1,4 @@
 import json
-from typing import List
 
 import tweepy
 
@@ -27,7 +26,7 @@ class Authenticator:
     """Authenticates us to get the api.API."""
 
     def __init__(self, credentials_path):
-        self._credentials = []  # type: List[Credentials]
+        self._credentials: list[Credentials] = []
         self._load_credentials(credentials_path)
 
     def _load_credentials(self, path):

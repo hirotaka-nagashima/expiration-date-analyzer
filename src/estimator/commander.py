@@ -1,7 +1,6 @@
 """Manages data flow to evaluate classifiers."""
 
 import os
-from typing import List, Tuple
 
 from sklearn import model_selection, naive_bayes
 
@@ -10,7 +9,7 @@ from analyzer.labeler import labeler
 from estimator import sklearn
 from logger import fileio
 
-_Dataset = Tuple[List[sklearn.X], List[sklearn.Y], List[sklearn.Y]]
+_Dataset = tuple[list[sklearn.X], list[sklearn.Y], list[sklearn.Y]]
 
 
 def do(data_root_dir):
@@ -38,9 +37,9 @@ def _load_dataset(dirs, additional_extension=None) -> _Dataset:
             AutoLabeler. For example, "time_estimated.json.bsig0" has an
             additional extension, "bsig0".
     """
-    x = []  # type: List[sklearn.X]
-    y_pred = []  # type: List[sklearn.Y]
-    y_true = []  # type: List[sklearn.Y]
+    x: list[sklearn.X] = []
+    y_pred: list[sklearn.Y] = []
+    y_true: list[sklearn.Y] = []
     registered_ids = set()
     for dir_ in dirs:
         # Load data from a disk.
@@ -57,9 +56,9 @@ def _load_dataset(dirs, additional_extension=None) -> _Dataset:
                 continue
             text = tweets_df.at[id_, "full_text"]
             time_expressions = all_time_expressions[id_]
-            x_ = (text, time_expressions)  # type: sklearn.X
-            y_pred_ = time_estimated[id_]  # type: sklearn.Y
-            y_true_ = time_labeled[id_]  # type: sklearn.Y
+            x_: sklearn.X = (text, time_expressions)
+            y_pred_: sklearn.Y = time_estimated[id_]
+            y_true_: sklearn.Y = time_labeled[id_]
 
             x.append(x_)
             y_pred.append(y_pred_)

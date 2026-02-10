@@ -3,6 +3,7 @@ import os
 import re
 from collections.abc import Iterable
 
+import ipadic
 import MeCab
 import numpy as np
 from sklearn import model_selection, pipeline
@@ -116,7 +117,11 @@ class TextDivider:
     """Divides a text into meaningful words."""
 
     _PATH = os.path.abspath(__file__ + "/../../../data/words.json")
-    _tagger = MeCab.Tagger("-Ochasen")
+    _CHASEN_ARGS = (
+        r' -F "%m\t%f[7]\t%f[6]\t%F-[0,1,2,3]\t%f[4]\t%f[5]\n"'
+        r' -U "%m\t%m\t%m\t%F-[0,1,2,3]\t\t\n"'
+    )
+    _tagger = MeCab.Tagger(ipadic.MECAB_ARGS + _CHASEN_ARGS)
 
     def __init__(
         self,
